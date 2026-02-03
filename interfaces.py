@@ -16,5 +16,5 @@ from AMDParser import *
 from NvidiaParser import *
 
 if __name__  == "__main__":
-    NvidiaTorchProfilerParser("/home/zov/rocm-halcyon/torchprofiler/B300/U8/wan_traces_rank0.json").parse().export_to_excel("B300-shape.xlsx",sheet_name="U8")
-    NvidiaTorchProfilerParser("/home/zov/rocm-halcyon/torchprofiler/B300/U4/wan_traces_rank0.json").parse().export_to_excel("B300-shape.xlsx",sheet_name="U4")
+    NvidiaTorchProfilerParser("wan_traces_rank0.json").parse().export_to_excel("shape.xlsx",sheet_name="NV-U8")
+    AMDTorchProfilerParser("wan_traces_rank0.json").parse().export_to_excel("shape.xlsx",sheet_name="AMD-U4")
