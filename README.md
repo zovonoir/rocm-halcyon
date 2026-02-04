@@ -11,7 +11,7 @@ This is a simple toolkit to parse torch profiler file and produce data spreadshe
 import rocm_halcyon as rh
 
 # for AMD devices
-ops = rh.parse_torch_profiler("/home/zov/rocm-halcyon/torchprofiler/compare/disable/debug.json")
+ops = rh.parse_torch_profiler("debug.json")
 rh.export_to_excel(ops,
     {
         "gpu_kernel_name":rh.GPUKernelNameVisitor(),
@@ -38,7 +38,7 @@ rh.export_to_excel(ops,
 
 ```
 # for NV devices
-ops = rh.parse_torch_profiler("/home/zov/rocm-halcyon/torchprofiler/B300/U4/wan_traces_rank0.json",device_type="nv")
+ops = rh.parse_torch_profiler("wan_traces_rank0.json",device_type="nv")
 rh.export_to_excel(ops,
     {
         "gpu_kernel_name":rh.GPUKernelNameVisitor(),
