@@ -1,17 +1,7 @@
-from ast import Tuple
-from fileinput import filename
-import os
-import pandas as pd
-import numpy as np
-import json
-import tqdm
+import os,json,tqdm,re
 from warnings import warn as warning
 from typing import List 
-from dataclasses import dataclass
-from typing import Optional, Any
-import parse
-import re
-from perfetto.trace_processor import TraceProcessor
+import pandas as pd
 
 # from utils import *
 from .KernelDef import CpuOp,Kernel

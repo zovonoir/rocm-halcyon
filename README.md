@@ -1,5 +1,11 @@
 This is a simple toolkit to parse torch profiler file and produce data spreadsheet.
 
+# install
+```
+ python setup.py bdist_wheel
+ pip install dist/*.whl --force-reinstall
+```
+
 # usage
 ```
 import rocm_halcyon as rh
