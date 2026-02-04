@@ -13,9 +13,10 @@ import parse
 import re
 from perfetto.trace_processor import TraceProcessor
 
-from utils import *
+# from utils import *
+from .KernelDef import CpuOp,Kernel
 
-class AMDTorchProfilerParser():
+class NvidiaTorchProfilerParser():
     def __init__(self,json_file):
         self.json_file = json_file
         self.all_kernels:List[Kernel] = []
@@ -26,18 +27,12 @@ class AMDTorchProfilerParser():
         return [obj for obj in all_events if "cat" in obj and obj['cat']=="kernel"]
 
     def _filter_launch_kernels(self,all_events):
-        cond_is_hipLaunchKernel = lambda obj:("cat" in obj and \
-                                obj["cat"]=="cuda_runtime" and \
-                                 "name" in obj and re.match(r'^hip[a-zA-Z]*LaunchKernel$', obj["name"]))
 
         cond_is_cuLaunchKernel = lambda obj:("cat" in obj and \
                                 obj["cat"]=="cuda_driver" and \
                                  "name" in obj and re.match(r'^cu[a-zA-Z]*LaunchKernel[a-zA-Z]*$', obj["name"]))
 
-        return [obj for obj in all_events if cond_is_hipLaunchKernel(obj)]
-        # return [obj for obj in all_events if "cat" in obj and \
-        #         obj["cat"]=="cuda_runtime" and \
-        #         "name" in obj and re.match(r'hip[a-zA-Z]*LaunchKernel$', obj["name"])]
+        return [obj for obj in all_events if cond_is_cuLaunchKernel(obj)]
 
     def _filter_user_annotations(self,all_events):
         return [obj for obj in all_events if "cat" in obj and obj["cat"]=="gpu_user_annotation"]
@@ -75,7 +70,8 @@ class AMDTorchProfilerParser():
             host_launching_cost = None
             correlation = int(item["args"]["correlation"])
             if correlation in correlation_to_kernel_launch:
-                smem = correlation_to_kernel_launch[int(item["args"]["correlation"])][0]["args"]["shared memory"]
+                # smem = correlation_to_kernel_launch[int(item["args"]["correlation"])][0]["args"]["shared memory"]
+                smem = int(item["args"]["shared memory"])
                 host_launching_cost = correlation_to_kernel_launch[int(item["args"]["correlation"])][0]["dur"]
             self.all_kernels.append(
                 Kernel(
@@ -201,7 +197,7 @@ class AMDTorchProfilerParser():
             all_user_annotations = self._filter_user_annotations(all_events)
             all_cpu_op = self._filter_cpu_op(all_events)
             all_cpu_op.sort(key=lambda obj: obj["ts"])
-            # 构建一个correlation id和hiplaunchkernel的对照表,可以根据kernel中的correlation id快速的找到下发信号
+            # 构建一个correlation id和launchkernel的对照表,可以根据kernel中的correlation id快速的找到下发信号
             correlation_to_kernel_launch = dict()
 
             for item in tqdm.tqdm(all_launch_kernels,desc="mapping kernel correlation..."):
@@ -221,7 +217,8 @@ class AMDTorchProfilerParser():
 
         self.check_data_correctness()
 
-        return self
+        return self.all_kernels
+        # return self   
 
     def export_to_excel(self,file_name = None,sheet_name="kernel"):
         raw_data = {
@@ -272,74 +269,3 @@ class AMDTorchProfilerParser():
         else:
             df.to_excel(file_name, sheet_name=sheet_name, index=False)
 
-
-class RocprofParser():
-    def __init__(self, pftrace_file) -> None:
-        self.pftrace_file = pftrace_file
-        self.tp = TraceProcessor(trace=self.pftrace_file)
-
-    def parse_kernel_dispatch(self, file_name=None):
-        """
-        优化版本：使用单次 SQL 查询 + PIVOT，避免循环查询
-        速度提升约 100-1000 倍
-        """
-        # 单次 SQL 查询，使用 CASE WHEN 实现 PIVOT，一次性获取所有数据
-        pivot_query = """
-        SELECT 
-            slice.id,
-            slice.name AS kernel_name,
-            MAX(CASE WHEN args.key = 'debug.delta_ns' THEN args.display_value END) AS kernel_duration,
-            MAX(CASE WHEN args.key = 'debug.begin_ns' THEN args.display_value END) AS kernel_start_timestamp,
-            MAX(CASE WHEN args.key = 'debug.end_ns' THEN args.display_value END) AS kernel_end_timestamp,
-            MAX(CASE WHEN args.key = 'debug.agent' THEN args.display_value END) AS device_id,
-            MAX(CASE WHEN args.key = 'debug.stream_ID' THEN args.display_value END) AS stream_id,
-            MAX(CASE WHEN args.key = 'debug.Scratch_Size' THEN args.display_value END) AS scratch_size,
-            MAX(CASE WHEN args.key = 'debug.LDS_Block_Size' THEN args.display_value END) AS lds_block_size,
-            MAX(CASE WHEN args.key = 'debug.VGPR_Count' THEN args.display_value END) AS vgpr_count,
-            MAX(CASE WHEN args.key = 'debug.Accum_VGPR_Count' THEN args.display_value END) AS accum_vgpr_count,
-            MAX(CASE WHEN args.key = 'debug.SGPR_Count' THEN args.display_value END) AS sgpr_count,
-            MAX(CASE WHEN args.key = 'debug.workgroup_size' THEN args.display_value END) AS workgroup_size,
-            MAX(CASE WHEN args.key = 'debug.grid_size' THEN args.display_value END) AS grid_size
-        FROM slice
-        JOIN args ON slice.arg_set_id = args.arg_set_id
-        WHERE slice.category = 'kernel_dispatch'
-        GROUP BY slice.id
-        ORDER BY slice.id
-        """
-        
-        print("正在执行 SQL 查询（单次查询获取所有数据）...")
-        result = self.tp.query(pivot_query)
-        df = result.as_pandas_dataframe()
-        print(f"查询完成，共 {len(df)} 条记录")
-        
-        # 添加 kernel_gap 列（计算同一个 stream 内相邻 kernel 的间隔）
-        # kernel_gap = 当前 kernel 开始时间 - 同一 stream 内前一个 kernel 结束时间
-        df['kernel_start_timestamp'] = pd.to_numeric(df['kernel_start_timestamp'], errors='coerce')
-        df['kernel_end_timestamp'] = pd.to_numeric(df['kernel_end_timestamp'], errors='coerce')
-        
-        # 按 stream_id 分组，计算同一 stream 内的 gap
-        df = df.sort_values(['stream_id', 'kernel_start_timestamp']).reset_index(drop=True)
-        df['kernel_gap'] = df.groupby('stream_id').apply(
-            lambda g: g['kernel_start_timestamp'] - g['kernel_end_timestamp'].shift(1)
-        ).reset_index(level=0, drop=True)
-        df['kernel_gap'] = df['kernel_gap'].fillna(0)  # 每个 stream 的第一个 kernel gap 为 0
-        
-        # 重命名和重排列以匹配原函数的输出格式
-        # df = df.rename(columns={'stream_id': 'stream_id', 'grid_size': 'grid_size'})
-        df = df[['kernel_name', 'kernel_duration', 'kernel_start_timestamp', 
-                 'kernel_end_timestamp', 'kernel_gap', 'device_id', 'stream_id',
-                 'scratch_size', 'lds_block_size', 'vgpr_count', 'accum_vgpr_count',
-                 'sgpr_count', 'workgroup_size', 'grid_size']]
-        
-        # 保存到文件
-        if file_name is None:
-            file_name = "test.xlsx"
-        
-        if os.path.exists(file_name):
-            with pd.ExcelWriter(file_name, mode='a', engine='openpyxl', if_sheet_exists='replace') as writer:
-                df.to_excel(writer, sheet_name="kernel_dispatch", index=False)
-        else:
-            df.to_excel(file_name, sheet_name="kernel_dispatch", index=False)
-        
-        print(f"数据已保存到 {file_name}")
-        return df
