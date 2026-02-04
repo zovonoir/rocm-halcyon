@@ -15,6 +15,11 @@ from perfetto.trace_processor import TraceProcessor
 from .AMDParser import AMDTorchProfilerParser
 from .NvidiaParser import NvidiaTorchProfilerParser
 from .KernelDef import Kernel
+from . import halcyon_core as _C
+
+def say_hello():
+    """调用 C++ 扩展模块中的 say_hello 函数"""
+    _C.say_hello()
 
 
 class VisitorBase():
