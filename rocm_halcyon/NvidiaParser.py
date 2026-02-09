@@ -21,8 +21,11 @@ class NvidiaTorchProfilerParser():
         cond_is_cuLaunchKernel = lambda obj:("cat" in obj and \
                                 obj["cat"]=="cuda_driver" and \
                                  "name" in obj and re.match(r'^cu[a-zA-Z]*LaunchKernel[a-zA-Z]*$', obj["name"]))
+        cond_is_cuLaunchKernel2 = lambda obj : ("cat" in obj and \
+                                obj["cat"]=="cuda_runtime" and \
+                                "name" in obj and re.match(r'^cu[a-zA-Z]*LaunchKernel[a-zA-Z]*$', obj["name"]))
 
-        return [obj for obj in all_events if cond_is_cuLaunchKernel(obj)]
+        return [obj for obj in all_events if cond_is_cuLaunchKernel(obj) or cond_is_cuLaunchKernel2(obj)]
 
     def _filter_user_annotations(self,all_events):
         return [obj for obj in all_events if "cat" in obj and obj["cat"]=="gpu_user_annotation"]
