@@ -23,8 +23,12 @@ from .interfaces import (
 
 from .visitors.bw_visitor import BWVsitor
 from .visitors.tflops_visitor import TflopsVisitor
-
+from .utils import (
+    load_all_events
+)
 __all__ = [
+    "load_all_events",
+    
     "export_to_excel",
     "parse_torch_profiler",
     "BWVsitor","TflopsVisitor",
