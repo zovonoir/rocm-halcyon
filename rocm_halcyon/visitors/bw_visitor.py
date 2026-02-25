@@ -1,5 +1,5 @@
 from ..KernelDef import CpuOp,Kernel
-from visitor import VisitorBase
+from .visitor import VisitorBase
 
 from warnings import warn
 
