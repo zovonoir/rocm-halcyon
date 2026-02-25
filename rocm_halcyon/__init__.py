@@ -19,37 +19,32 @@ from .interfaces import (
     KernelOutputDtypeVisitor,
     KernelHostLaunchingCostVisitor,
     KernelDeviceVisitor,
-
-
-
-
 )
 
-__all__ = ["export_to_excel","parse_torch_profiler",
+from .visitors.bw_visitor import BWVsitor
+from .visitors.tflops_visitor import TflopsVisitor
 
+__all__ = [
+    "export_to_excel",
+    "parse_torch_profiler",
+    "BWVsitor","TflopsVisitor",
 
-"GPUKernelNameVisitor",
-"CPUKernelNameVisitor",
-"TorchKernelNameVisitor",
-"KernelDurationVisitor",
-"KernelStartTimestampVisitor",
-"KernelEndTimestampVisitor",
-"KernelGapVisitor",
-"KernelGridSizeVisitor",
-"KernelBlockSizeVisitor",
-"KernelStreamIdVisitor",
-"KernelSharedMemorySizeVisitor",
-"KernelInputShapeVisitor",
-"KernelOutputShapeVisitor",
-"KernelInputDtypeVisitor",
-"KernelOutputDtypeVisitor",
-"KernelHostLaunchingCostVisitor",
-"KernelDeviceVisitor",
-
-
-
+    "GPUKernelNameVisitor",
+    "CPUKernelNameVisitor",
+    "TorchKernelNameVisitor",
+    "KernelDurationVisitor",
+    "KernelStartTimestampVisitor",
+    "KernelEndTimestampVisitor",
+    "KernelGapVisitor",
+    "KernelGridSizeVisitor",
+    "KernelBlockSizeVisitor",
+    "KernelStreamIdVisitor",
+    "KernelSharedMemorySizeVisitor",
+    "KernelInputShapeVisitor",
+    "KernelOutputShapeVisitor",
+    "KernelInputDtypeVisitor",
+    "KernelOutputDtypeVisitor",
+    "KernelHostLaunchingCostVisitor",
+    "KernelDeviceVisitor",
 
 ]
-
-
-
