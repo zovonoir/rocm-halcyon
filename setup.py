@@ -109,6 +109,8 @@ setup(
     install_requires=[
         "pandas",
         "numpy",
+        "parse",
+        "perfetto"
     ],
     python_requires=">=3.7",
     cmdclass={
