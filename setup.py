@@ -106,12 +106,12 @@ setup(
         "rocm_halcyon": ["*.so", "*.pyi", "py.typed"],
     },
     include_package_data=True,
-    install_requires=[
-        "pandas",
-        "numpy",
-        "parse",
-        "perfetto"
-    ],
+    # install_requires=[
+    #     "pandas",
+    #     "numpy",
+    #     "parse",
+    #     "perfetto"
+    # ],
     python_requires=">=3.7",
     cmdclass={
         "build_py": CustomBuildPy,
