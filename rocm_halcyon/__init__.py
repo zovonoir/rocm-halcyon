@@ -1,6 +1,6 @@
 from .interfaces import (
     export_to_excel,parse_torch_profiler,
-
+    say_hello,
 
     GPUKernelNameVisitor,
     CPUKernelNameVisitor,
@@ -27,6 +27,9 @@ from .utils import (
     load_all_events
 )
 __all__ = [
+
+    "say_hello",
+
     "load_all_events",
     
     "export_to_excel",
