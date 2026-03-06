@@ -5,7 +5,9 @@ from warnings import warn
 from .utils import *
 from .tensor_core_floats_visitor import TensorCoreFloatsVisitor
 
-
+"""
+用于计算某个算子的TensorCore实际算力值,单位TFlops,一般情况下,这等于 TensorCore浮点运算量 / duration
+"""
 class TensorCoreTFlopsVisitor(VisitorBase):
     def __init__(self) -> None:
         super().__init__()

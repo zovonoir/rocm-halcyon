@@ -29,70 +29,87 @@ class VisitorBase():
         assert 0,"call Virtual Base Visit is illegal!"
 
 class GPUKernelNameVisitor(VisitorBase):
+    """用于获取GPU实际执行的kernel名称"""
     def visit(self,kernel:Kernel):
         return kernel.name
 
 class CPUKernelNameVisitor(VisitorBase):
+    """用于获取某个算子的CPU侧的下发名称,如aten::mm"""
     def visit(self,kernel:Kernel):
         return kernel.cpu_op_name
 
 class TorchKernelNameVisitor(VisitorBase):
+    """用于获取某个算子的pytorch层面的执行名称,如torch.nn.Linear"""
     def visit(self,kernel:Kernel):
         return kernel.torch_op_name
 
 class KernelDurationVisitor(VisitorBase):
+    """用于获取某个算子在GPU上的执行时间,单位us"""
     def visit(self,kernel:Kernel):
         return kernel.duration
 
 class KernelStartTimestampVisitor(VisitorBase):
+    """用于获取某个算子的GPU上的开始时间戳,仅为数值,无单位"""
     def visit(self,kernel:Kernel):
         return kernel.start_timestamp
 
 class KernelEndTimestampVisitor(VisitorBase):
+    """用于获取某个算子在GPU上的结束时间戳,仅为数值,无单位"""
     def visit(self,kernel:Kernel):
         return kernel.end_timestamp
 
 class KernelGapVisitor(VisitorBase):
+    """用于获取第n个算子的开始时间与第n-1个算子的结束时间的差值,单位us"""
     def visit(self,kernel:Kernel):
         return kernel.gap
 
 class KernelGridSizeVisitor(VisitorBase):
+    """用于获取算子启动时的grid配置"""
     def visit(self,kernel:Kernel):
         return kernel.grid
 
 class KernelBlockSizeVisitor(VisitorBase):
+    """用于获取算子启动时的block配置"""
     def visit(self,kernel:Kernel):
         return kernel.block
 
 class KernelStreamIdVisitor(VisitorBase):
+    """用于获取承载该算子在GPU上运行的stream id"""
     def visit(self,kernel:Kernel):
         return kernel.stream
 
 class KernelSharedMemorySizeVisitor(VisitorBase):
+    """用于获取该算子启动时预先配置的共享内存大小"""
     def visit(self,kernel:Kernel):
         return kernel.smem
 
 class KernelInputShapeVisitor(VisitorBase):
+    """用于获取kernel在CPU侧记录的输入形状"""
     def visit(self,kernel:Kernel):
         return kernel.input_shape
 
 class KernelOutputShapeVisitor(VisitorBase):
+    """用于获取kernel在CPU侧记录到的输出形状"""
     def visit(self,kernel:Kernel):
         return kernel.output_shape
 
 class KernelInputDtypeVisitor(VisitorBase):
+    """用于获取kenrel在CPU侧记录到的输入数据类型"""
     def visit(self,kernel:Kernel):
         return kernel.input_dtype
 
 class KernelOutputDtypeVisitor(VisitorBase):
+    """用于获取kernel在CPU侧记录到的输出数据类型"""
     def visit(self,kernel:Kernel):
         return kernel.output_dtype
 
 class KernelHostLaunchingCostVisitor(VisitorBase):
+    """用于获取启动该算子的那条launch kernel API调用的耗时,单位us"""
     def visit(self,kernel:Kernel):
         return kernel.host_launching_cost
 
 class KernelDeviceVisitor(VisitorBase):
+    """用于或者承载该算子运行的GPU的ID"""
     def visit(self,kernel:Kernel):
         return kernel.device
 

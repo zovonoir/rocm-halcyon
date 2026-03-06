@@ -6,6 +6,9 @@ from .utils import *
 import parse
 from .valu_floats_visitor import VALUFloatsVisitor
 
+"""
+用于计算某个算子的向量VALU单元的实际算力值,一般情况下,这等于 VALU运算量 / duration
+"""
 class VALUTFloatsVisitor(VisitorBase):
     def __init__(self) -> None:
         super().__init__()

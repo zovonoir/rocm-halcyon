@@ -8,6 +8,9 @@ import parse
 import numpy as np
 from .utils import *
 
+"""
+用于计算某个算子的输出数据字节数
+"""
 class OutputDataSizeVisitor(VisitorBase):
     def __init__(self) -> None:
         super().__init__()

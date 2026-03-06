@@ -29,7 +29,14 @@ rh.export_to_excel(ops,
         "output_shape":rh.KernelOutputShapeVisitor(),
         "output_data_type":rh.KernelOutputDtypeVisitor(),
         "device_id":rh.KernelDeviceVisitor(),
-        "host_launching_cost":rh.KernelHostLaunchingCostVisitor()
+        "host_launching_cost":rh.KernelHostLaunchingCostVisitor(),
+        "input_data_size":rh.InputDataSizeVisitor(),
+        "output_data_size":rh.OutputDataSizeVisitor(),
+        "BW(GB/s)":rh.BWVsitor(),
+        "TensorCoreFloats":rh.TensorCoreFloatsVisitor(),
+        "TensorCoreTFlops":rh.TensorCoreTFlopsVisitor(),
+        "VALUFloats":rh.VALUFloatsVisitor(),
+        "VALUTFlops":rh.VALUTFloatsVisitor(),
     },
     file_name="debug.xlsx",sheet_name="data")
 
@@ -56,10 +63,18 @@ rh.export_to_excel(ops,
         "output_shape":rh.KernelOutputShapeVisitor(),
         "output_data_type":rh.KernelOutputDtypeVisitor(),
         "device_id":rh.KernelDeviceVisitor(),
-        "host_launching_cost":rh.KernelHostLaunchingCostVisitor()
+        "host_launching_cost":rh.KernelHostLaunchingCostVisitor(),
+        "input_data_size":rh.InputDataSizeVisitor(),
+        "output_data_size":rh.OutputDataSizeVisitor(),
+        "BW(GB/s)":rh.BWVsitor(),
+        "TensorCoreFloats":rh.TensorCoreFloatsVisitor(),
+        "TensorCoreTFlops":rh.TensorCoreTFlopsVisitor(),
+        "VALUFloats":rh.VALUFloatsVisitor(),
+        "VALUTFlops":rh.VALUTFloatsVisitor(),
     },
     file_name="debug.xlsx",sheet_name="nv-data")
 ```
 
 # known issues
 Torch profiler is not always reliable, it has some chance to generate wrong duration,wrong correlation id,wrong stream relationship... It a known bug of pytorch.
+Currently, Operator level analysis is not fully support, only support gemm, and some elementwise kernel, use with cautious.

@@ -1,4 +1,8 @@
 from ..KernelDef import Kernel
+
+"""
+一切Visitor的基类
+"""
 class VisitorBase():
     def __init__(self) -> None:
         self.dtypes_to_bpe = {

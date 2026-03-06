@@ -8,6 +8,10 @@ import parse
 import numpy as np
 from .utils import *
 
+
+"""
+用于计算某个算子的输入数据字节数
+"""
 class InputDataSizeVisitor(VisitorBase):
     def __init__(self) -> None:
         super().__init__()

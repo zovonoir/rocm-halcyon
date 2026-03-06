@@ -5,6 +5,9 @@ from warnings import warn
 from .utils import *
 import parse
 
+"""
+用于计算某个算子的向量VALU单元的理论浮点运算量
+"""
 class VALUFloatsVisitor(VisitorBase):
     def __init__(self) -> None:
         super().__init__()
