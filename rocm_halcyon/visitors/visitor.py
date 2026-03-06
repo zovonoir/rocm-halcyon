@@ -6,14 +6,20 @@ class VisitorBase():
             'bool':1,
             'int':4,
             'Scalar':0,
-            'c10:Bfloat16':2,
+            'c10::BFloat16':2,
             'float':4,
+            '':0,
+            'TensorList':0,
+            'ScalarList':0,
+            'double':8,
+            None:0
         }
     def get_bpe(self,dtypes):
         if isinstance(dtypes,list):
             res = []
             for dtype in dtypes:
                 res.append(self.dtypes_to_bpe[dtype])
+            return res
         else:
             return self.dtypes_to_bpe[dtypes]
 

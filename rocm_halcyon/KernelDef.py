@@ -47,6 +47,10 @@ class Kernel:
         self.cpu_op_name = cpu_op_name
         self.torch_op_name = torch_op_name
 
+    def __repr__(self):
+        attrs = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())
+        return f"Kernel({attrs})"
+
     def accept(self,visitor):
         if hasattr(visitor,"visit"):
             visitor.visit(self)

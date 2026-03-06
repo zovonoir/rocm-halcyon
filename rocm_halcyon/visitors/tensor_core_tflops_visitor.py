@@ -1,0 +1,29 @@
+from ..KernelDef import CpuOp,Kernel
+from .visitor import VisitorBase
+from functools import reduce
+from warnings import warn
+from .utils import *
+from .tensor_core_floats_visitor import TensorCoreFloatsVisitor
+
+
+class TensorCoreTFlopsVisitor(VisitorBase):
+    def __init__(self) -> None:
+        super().__init__()
+        self.prod = lambda x_list:reduce(lambda x,y:x*y,x_list)
+        self.floats_calculator = TensorCoreFloatsVisitor()
+
+    def visit(self,kernel:Kernel):
+        cpuop = kernel.cpu_op_name
+        if cpuop == "aten::mm":
+            return self.visit_aten_mm(kernel)
+        return self.visit_general(kernel)
+    
+    def visit_aten_mm(self,kernel:Kernel):
+        tfloats = self.floats_calculator.visit(kernel) / 1e12 # T
+        sec = kernel.duration / 1e6 # us -> s
+        TFlops = tfloats / sec
+        return TFlops
+
+    def visit_general(self,kernel:Kernel):
+        return 0
+
