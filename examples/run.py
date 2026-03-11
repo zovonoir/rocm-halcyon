@@ -1,6 +1,6 @@
 import rocm_halcyon as rh
 
-ops = rh.parse_torch_profiler("trace.json",device_type="amd")
+ops = rh.parse_torch_profiler("/home/zov/rocm-halcyon/torchprofiler/1773129217.1439552-TP-0.trace.json",device_type="amd")
 
 rh.export_to_excel(ops,
     {
@@ -27,4 +27,4 @@ rh.export_to_excel(ops,
         "device_id":rh.KernelDeviceVisitor(),
         "host_launching_cost":rh.KernelHostLaunchingCostVisitor()
     },
-    file_name="data.xlsx",sheet_name="your-sheet-name")
+    file_name="sglang-fp8-baseline-shape.xlsx",sheet_name="your-sheet-name")

@@ -16,7 +16,8 @@ class VisitorBase():
             'TensorList':0,
             'ScalarList':0,
             'double':8,
-            None:0
+            None:0,
+            'c10::Float8_e4m3fn':1,
         }
     def get_bpe(self,dtypes):
         if isinstance(dtypes,list):

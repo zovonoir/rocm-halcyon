@@ -129,7 +129,7 @@ def export_to_excel(kernels:List[Kernel],visitors:Dict[str,VisitorBase],file_nam
     data = dict()
     for header,visitor in visitors.items():
         header_data = []
-        for kernel in kernels:
+        for kernel in tqdm.tqdm(kernels,desc=f"processing:{header}"):
             result = visitor.visit(kernel)
             header_data.append(result)
         data[header] = header_data
