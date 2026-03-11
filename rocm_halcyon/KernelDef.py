@@ -23,7 +23,11 @@ class Kernel:
     input_strides: Optional[Any] = None,
     output_strides: Optional[Any] = None,
     cpu_op_name:Optional[str] = None,
-    torch_op_name:Optional[str] = None
+    torch_op_name:Optional[str] = None,
+    module_name: Optional[str] = None,
+    module_type: Optional[str] = None,
+    module_depth: Optional[int] = None,
+    parent_module: Optional[str] = None
     ):
         self.name = name
         self.duration = duration
@@ -46,6 +50,10 @@ class Kernel:
         self.output_strides = output_strides
         self.cpu_op_name = cpu_op_name
         self.torch_op_name = torch_op_name
+        self.module_name = module_name
+        self.module_type = module_type
+        self.module_depth = module_depth
+        self.parent_module = parent_module
 
     def __repr__(self):
         attrs = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())

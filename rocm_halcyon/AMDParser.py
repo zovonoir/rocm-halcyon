@@ -35,6 +35,12 @@ class AMDTorchProfilerParser():
     def _filter_user_annotations(self,all_events):
         return [obj for obj in all_events if "cat" in obj and obj["cat"]=="gpu_user_annotation"]
 
+    def _filter_module_annotations(self, all_events):
+        """Extract user_annotation events starting with 'MODULE:'"""
+        return [obj for obj in all_events
+                if obj.get('cat') == 'user_annotation'
+                and obj.get('name', '').startswith('MODULE:')]
+
     def _filter_cpu_op(self,all_events):
         return [obj for obj in all_events if "cat" in obj and obj["cat"]=="cpu_op"]
     
@@ -172,6 +178,88 @@ class AMDTorchProfilerParser():
                     kernel.output_strides = None # cpu_op.output_strides
                     kernel.cpu_op_name = None # cpu_op.name
 
+    def _build_module_timeline(self, annotations):
+        """
+        Build timestamp ranges for each module context.
+
+        Parses MODULE: annotations and creates a mapping of (start_ts, end_ts) -> module_info.
+        Handles nested modules using stack-based approach.
+
+        Returns:
+            List of dicts with keys: name, type, depth, parent, start_ts, end_ts
+        """
+        module_timeline = []
+
+        for ann in annotations:
+            if ann.get('ph') == 'X':  # Complete event (has duration)
+                # Parse annotation format: "MODULE:{name}|{type}|depth={depth}|parent={parent}"
+                name_str = ann.get('name', '')
+                if not name_str.startswith('MODULE:'):
+                    continue
+
+                # Remove "MODULE:" prefix
+                parts = name_str[7:].split('|')
+                if len(parts) < 4:
+                    continue
+
+                module_info = {
+                    'name': parts[0],
+                    'type': parts[1],
+                    'depth': int(parts[2].split('=')[1]) if '=' in parts[2] else 0,
+                    'parent': parts[3].split('=')[1] if '=' in parts[3] else '',
+                    'start_ts': ann.get('ts', 0),
+                    'end_ts': ann.get('ts', 0) + ann.get('dur', 0)
+                }
+                module_timeline.append(module_info)
+
+        # Sort by start timestamp
+        module_timeline.sort(key=lambda x: x['start_ts'])
+        return module_timeline
+
+    def _find_module_at_timestamp(self, start_ts, end_ts):
+        """
+        Find the deepest (most specific) module active during the given time range.
+
+        Args:
+            start_ts: Kernel start timestamp
+            end_ts: Kernel end timestamp
+
+        Returns:
+            Module info dict or None if no module found
+        """
+        if not hasattr(self, 'module_timeline'):
+            return None
+
+        # Find all modules that contain this kernel's time range
+        candidates = []
+        for module in self.module_timeline:
+            # Check if kernel is within module's time range
+            if module['start_ts'] <= start_ts and module['end_ts'] >= end_ts:
+                candidates.append(module)
+
+        # Return the deepest module (highest depth value)
+        if candidates:
+            candidates.sort(key=lambda x: x['depth'], reverse=True)
+            return candidates[0]
+
+        return None
+
+    def map_modules_to_kernels(self):
+        """Map module information to kernels based on timestamps."""
+        if not hasattr(self, 'module_timeline') or not self.module_timeline:
+            # No module annotations found, skip mapping
+            return
+
+        for kernel in tqdm.tqdm(self.all_kernels, desc="mapping modules to kernels..."):
+            module_info = self._find_module_at_timestamp(
+                kernel.start_timestamp, kernel.end_timestamp
+            )
+            if module_info:
+                kernel.module_name = module_info['name']
+                kernel.module_type = module_info['type']
+                kernel.module_depth = module_info['depth']
+                kernel.parent_module = module_info['parent']
+
     def check_data_correctness(self,):
         if len(self.all_kernels) == 0:
             assert 0,"Provided json file didn't find any kernel information."
@@ -191,6 +279,10 @@ class AMDTorchProfilerParser():
             all_user_annotations = self._filter_user_annotations(all_events)
             all_cpu_op = self._filter_cpu_op(all_events)
             all_cpu_op.sort(key=lambda obj: obj["ts"])
+
+            # Extract and process module annotations
+            module_annotations = self._filter_module_annotations(all_events)
+            self.module_timeline = self._build_module_timeline(module_annotations)
             # 构建一个correlation id和hiplaunchkernel的对照表,可以根据kernel中的correlation id快速的找到下发信号
             correlation_to_kernel_launch = dict()
 
@@ -208,6 +300,9 @@ class AMDTorchProfilerParser():
             self.structurize_cpu_op(all_cpu_op)
             self.mapping_input_shapes()
             # self.infer_output_shapes()
+
+            # Map module annotations to kernels
+            self.map_modules_to_kernels()
 
         self.check_data_correctness()
         return self.all_kernels
