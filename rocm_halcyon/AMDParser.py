@@ -44,6 +44,9 @@ class AMDTorchProfilerParser():
     def _filter_cpu_op(self,all_events):
         return [obj for obj in all_events if "cat" in obj and obj["cat"]=="cpu_op"]
     
+    def _filter_call_stack(self,all_events):
+        return [obj for obj in all_events if "cat" in obj and (obj["cat"]=="cpu_op" or obj["cat"]=="python_function")]
+
     def _find_cpu_op(self,start,end) -> CpuOp:
         candidate:List[CpuOp] = []
         for idx,item in enumerate(self.all_cpu_ops):
@@ -266,6 +269,26 @@ class AMDTorchProfilerParser():
         if len(self.all_launch_kernels) == 0:
             warning("Provided json file didn't find any kernel launching information.")
 
+    def find_call_stack(self,all_call_stack):
+        all_call_stack = [item for item in all_call_stack if isinstance(item, dict) and 'ts' in item and 'dur' in item and 'name' in item]
+        all_call_stack.sort(key=lambda x: x['ts'])
+
+        # 对于每一条hiplaunch kernel 信号,向上追溯调用栈
+        for kernel in tqdm.tqdm(self.all_kernels,desc="finding call stack..."):
+            corr_id = kernel.correlation
+            if corr_id in self.correlation_to_kernel_launch:
+                launch_kernel_start_timestamp = self.correlation_to_kernel_launch[corr_id][0]["ts"]
+                launch_kernel_end_timestamp = self.correlation_to_kernel_launch[corr_id][0]["ts"] + \
+                                self.correlation_to_kernel_launch[corr_id][0]["dur"]
+                # 查找所有包含这个范围的信号
+                kernel_call_stack = []
+                for call in all_call_stack:
+                    if call['ts'] < launch_kernel_start_timestamp and call['ts'] + call['dur'] >= launch_kernel_end_timestamp:
+                        kernel_call_stack.append(call)
+                    if call['ts'] > launch_kernel_end_timestamp:
+                        break
+                kernel.call_stack = kernel_call_stack
+    
     def parse(self):
         json_file = self.json_file
         with open(json_file, 'r') as file:
@@ -278,6 +301,7 @@ class AMDTorchProfilerParser():
             all_launch_kernels = self._filter_launch_kernels(all_events)
             all_user_annotations = self._filter_user_annotations(all_events)
             all_cpu_op = self._filter_cpu_op(all_events)
+            all_call_stack = self._filter_call_stack(all_events)
             all_cpu_op.sort(key=lambda obj: obj["ts"])
 
             # Extract and process module annotations
@@ -299,6 +323,7 @@ class AMDTorchProfilerParser():
             self.structurize_kernel(all_kernels,correlation_to_kernel_launch) # self.all_kernels
             self.structurize_cpu_op(all_cpu_op)
             self.mapping_input_shapes()
+            self.find_call_stack(all_call_stack)
             # self.infer_output_shapes()
 
             # Map module annotations to kernels
