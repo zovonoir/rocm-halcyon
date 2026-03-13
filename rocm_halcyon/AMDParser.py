@@ -323,7 +323,7 @@ class AMDTorchProfilerParser():
             self.structurize_kernel(all_kernels,correlation_to_kernel_launch) # self.all_kernels
             self.structurize_cpu_op(all_cpu_op)
             self.mapping_input_shapes()
-            self.find_call_stack(all_call_stack)
+            # self.find_call_stack(all_call_stack)
             # self.infer_output_shapes()
 
             # Map module annotations to kernels
