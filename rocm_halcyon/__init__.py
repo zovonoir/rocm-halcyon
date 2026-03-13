@@ -28,6 +28,7 @@ from .visitors.valu_floats_visitor import VALUFloatsVisitor
 from .visitors.valu_tflops_visitor import VALUTFloatsVisitor
 from .visitors.input_data_size_visitor import InputDataSizeVisitor
 from .visitors.output_data_size_visitor import OutputDataSizeVisitor
+from .visitors.call_stack_visitor import CallStackVisitor
 from .visitors.module_visitors import (
     ModuleNameVisitor,
     ModuleTypeVisitor,
@@ -48,6 +49,7 @@ __all__ = [
     "ModuleAnnotator",
 
     # all visitors
+    "CallStackVisitor",
     "BWVsitor",
     "TensorCoreFloatsVisitor",
     "TensorCoreTFlopsVisitor",

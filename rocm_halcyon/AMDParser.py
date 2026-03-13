@@ -274,6 +274,7 @@ class AMDTorchProfilerParser():
         all_call_stack.sort(key=lambda x: x['ts'])
 
         # 对于每一条hiplaunch kernel 信号,向上追溯调用栈
+        self._gc_counter = 0
         for kernel in tqdm.tqdm(self.all_kernels,desc="finding call stack..."):
             corr_id = kernel.correlation
             if corr_id in self.correlation_to_kernel_launch:
@@ -284,11 +285,20 @@ class AMDTorchProfilerParser():
                 kernel_call_stack = []
                 for call in all_call_stack:
                     if call['ts'] < launch_kernel_start_timestamp and call['ts'] + call['dur'] >= launch_kernel_end_timestamp:
-                        kernel_call_stack.append(call)
+                        kernel_call_stack.append(call['name'])
                     if call['ts'] > launch_kernel_end_timestamp:
                         break
                 kernel.call_stack = kernel_call_stack
-    
+                self._gc_counter += 1
+            
+            # GC
+            if (self._gc_counter % 300 == 0) and (corr_id in self.correlation_to_kernel_launch):
+                all_call_stack = [item for item in all_call_stack if item['ts']+item['dur'] > launch_kernel_end_timestamp]
+            elif (self._gc_counter % 300 == 0) and not (corr_id in self.correlation_to_kernel_launch):
+                self._gc_counter -= 1
+            else:
+                pass
+
     def parse(self):
         json_file = self.json_file
         with open(json_file, 'r') as file:
@@ -323,7 +333,7 @@ class AMDTorchProfilerParser():
             self.structurize_kernel(all_kernels,correlation_to_kernel_launch) # self.all_kernels
             self.structurize_cpu_op(all_cpu_op)
             self.mapping_input_shapes()
-            # self.find_call_stack(all_call_stack)
+            self.find_call_stack(all_call_stack)
             # self.infer_output_shapes()
 
             # Map module annotations to kernels
