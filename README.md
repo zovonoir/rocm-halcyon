@@ -2,7 +2,7 @@ This is a simple toolkit to parse torch profiler file and produce data spreadshe
 
 # install
 ```
-mkdir build && cd build && cmake -G Ninja ..
+git submodule update --init --recursive && mkdir build && cd build && cmake -G Ninja ..
 cd .. && python setup.py bdist_wheel
 pip install dist/*.whl --force-reinstall
 ```
