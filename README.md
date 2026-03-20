@@ -78,5 +78,6 @@ rh.export_to_excel(ops,
 ```
 
 # known issues
-Torch profiler is not always reliable, it has some chance to generate wrong duration,wrong correlation id,wrong stream relationship... It a known bug of pytorch.
+1. Torch profiler is not always reliable, it has some chance to generate wrong duration,wrong correlation id,wrong stream relationship... It a known bug of pytorch.
 Currently, Operator level analysis is not fully support, only support gemm, and some elementwise kernel, use with cautious.
+2. NVIDIA device torchprofiler analysis is not available now.
