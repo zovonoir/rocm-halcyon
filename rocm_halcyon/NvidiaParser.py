@@ -93,7 +93,8 @@ class NvidiaTorchProfilerParser():
                     output_shape=None,
                     output_dtype=None,
                     output_strides=None,
-                    cpu_op_name=None
+                    cpu_op_name=None,
+                    device_type="nv",
                 )
             )
         self.all_kernels.sort(key=lambda obj: obj.start_timestamp)
@@ -145,6 +146,36 @@ class NvidiaTorchProfilerParser():
             )
 
         self.all_cpu_ops.sort(key=lambda obj: obj.start_timestamp)
+
+    def find_call_stack(self,all_call_stack):
+        all_call_stack = [item for item in all_call_stack if isinstance(item, dict) and 'ts' in item and 'dur' in item and 'name' in item]
+        all_call_stack.sort(key=lambda x: x['ts'])
+
+        # 对于每一条hiplaunch kernel 信号,向上追溯调用栈
+        self._gc_counter = 0
+        for kernel in tqdm.tqdm(self.all_kernels,desc="finding call stack..."):
+            corr_id = kernel.correlation
+            if corr_id in self.correlation_to_kernel_launch:
+                launch_kernel_start_timestamp = self.correlation_to_kernel_launch[corr_id][0]["ts"]
+                launch_kernel_end_timestamp = self.correlation_to_kernel_launch[corr_id][0]["ts"] + \
+                                self.correlation_to_kernel_launch[corr_id][0]["dur"]
+                # 查找所有包含这个范围的信号
+                kernel_call_stack = []
+                for call in all_call_stack:
+                    if call['ts'] < launch_kernel_start_timestamp and call['ts'] + call['dur'] >= launch_kernel_end_timestamp:
+                        kernel_call_stack.append(call['name'])
+                    if call['ts'] > launch_kernel_end_timestamp:
+                        break
+                kernel.call_stack = kernel_call_stack
+                self._gc_counter += 1
+            
+            # GC
+            if (self._gc_counter % 300 == 0) and (corr_id in self.correlation_to_kernel_launch):
+                all_call_stack = [item for item in all_call_stack if item['ts']+item['dur'] > launch_kernel_end_timestamp]
+            elif (self._gc_counter % 300 == 0) and not (corr_id in self.correlation_to_kernel_launch):
+                self._gc_counter -= 1
+            else:
+                pass
 
     def mapping_input_shapes(self,):
         # 对于每一条hiplaunchkernel信号,需要找到上层那个cpu_op,因为可能有形状信息
@@ -239,6 +270,9 @@ class NvidiaTorchProfilerParser():
 
         return None
 
+    def _filter_call_stack(self,all_events):
+        return [obj for obj in all_events if "cat" in obj and (obj["cat"]=="cpu_op" or obj["cat"]=="python_function")]
+
     def map_modules_to_kernels(self):
         """Map module information to kernels based on timestamps."""
         if not hasattr(self, 'module_timeline') or not self.module_timeline:
@@ -274,9 +308,12 @@ class NvidiaTorchProfilerParser():
                 assert 0,"json file is empty."
             
             all_kernels = self._filter_kernels(all_events)
+            if len(all_kernels) == 0:
+                assert 0,"!!!!"
             all_launch_kernels = self._filter_launch_kernels(all_events)
             all_user_annotations = self._filter_user_annotations(all_events)
             all_cpu_op = self._filter_cpu_op(all_events)
+            all_call_stack = self._filter_call_stack(all_events)
             all_cpu_op.sort(key=lambda obj: obj["ts"])
 
             # Extract and process module annotations
@@ -299,7 +336,7 @@ class NvidiaTorchProfilerParser():
             self.structurize_cpu_op(all_cpu_op)
             self.mapping_input_shapes()
             self.infer_output_shapes()
-
+            self.find_call_stack(all_call_stack)
             # Map module annotations to kernels
             self.map_modules_to_kernels()
 

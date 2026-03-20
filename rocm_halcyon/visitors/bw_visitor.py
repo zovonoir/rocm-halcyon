@@ -22,6 +22,8 @@ class BWVsitor(VisitorBase):
 
 
     def visit(self,kernel:Kernel):
+        if kernel.device_type != "amd":
+            return 0 # currently not support for NV input data size visitor
         total_data_size = self.input_data_size_calculator.visit(kernel) + \
                 self.output_data_size_calculator.visit(kernel)
         total_data_size /= 1e9 # bytes->GiB

@@ -13,6 +13,8 @@ class TensorCoreFloatsVisitor(VisitorBase):
         self.prod = lambda x_list:reduce(lambda x,y:x*y,x_list)
     
     def visit(self,kernel:Kernel):
+        if kernel.device_type != "amd":
+            return 0 # currently not support for NV input data size visitor
         cpuop = kernel.cpu_op_name
         if cpuop == "aten::mm":
             return self.visit_aten_mm(kernel)

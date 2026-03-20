@@ -101,7 +101,8 @@ class AMDTorchProfilerParser():
                     output_dtype = None,
                     output_strides = None,
                     cpu_op_name = None,
-                    torch_op_name = None 
+                    torch_op_name = None,
+                    device_type="amd"
                 )
             )
         self.all_kernels.sort(key=lambda obj: obj.start_timestamp)

@@ -15,6 +15,8 @@ class VALUTFloatsVisitor(VisitorBase):
         self.valu_calculator = VALUFloatsVisitor()
 
     def visit(self,kernel:Kernel):
+        if kernel.device_type != "amd":
+            return 0 # currently not support for NV input data size visitor
         cpuop = kernel.cpu_op_name
         if cpuop == "aten::mm":
             return self.visit_aten_mm(kernel)
