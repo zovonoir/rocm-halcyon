@@ -16,7 +16,7 @@ class TensorCoreFloatsVisitor(VisitorBase):
         if kernel.device_type != "amd":
             return 0 # currently not support for NV input data size visitor
         cpuop = kernel.cpu_op_name
-        if cpuop == "aten::mm":
+        if cpuop == "aten::mm" or cpuop == "aiter::hipb_mm":
             return self.visit_aten_mm(kernel)
         return self.visit_general(kernel)
 
