@@ -1,0 +1,32 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: "dummy"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: |
+            --model claude-sonnet-4
+          prompt: |
+            Review this PR for:
+            - Code quality and potential bugs
+            - Performance concerns
+            - Security issues
+            Provide constructive feedback with specific suggestions.
+        env:
+          ANTHROPIC_BASE_URL: https://llm-api.amd.com/Anthropic
+          ANTHROPIC_CUSTOM_HEADERS: "Ocp-Apim-Subscription-Key: ${{ secrets.LLM_GATEWAY_KEY }}, anthropic-version: vertex-2023-10-16"
+          NODE_TLS_REJECT_UNAUTHORIZED: "0"
