@@ -115,7 +115,7 @@ class AMDTorchProfilerParser():
     def structurize_cpu_op(self,all_cpu_ops):
         # breakpoint()
         self.all_cpu_ops:List[CpuOp] = []
-        for cpu_op in tqdm.tqdm(all_cpu_ops,desc="structurizing alll cpu ops..."):
+        for cpu_op in tqdm.tqdm(all_cpu_ops,desc="structurizing all cpu ops..."):
             input_shape = None if "Input Dims" not in cpu_op['args'] else cpu_op['args']["Input Dims"]
             input_strides = None if "Input Strides" not in cpu_op['args'] else cpu_op['args']["Input Strides"]
             input_dtype = None if "Input type" not in cpu_op['args'] else cpu_op['args']["Input type"]
@@ -270,7 +270,8 @@ class AMDTorchProfilerParser():
         if len(self.all_launch_kernels) == 0:
             warning("Provided json file didn't find any kernel launching information.")
 
-    def find_call_stack(self,all_call_stack):
+    def find_call_stack(self):
+        all_call_stack = self.all_call_stack
         all_call_stack = [item for item in all_call_stack if isinstance(item, dict) and 'ts' in item and 'dur' in item and 'name' in item]
         all_call_stack.sort(key=lambda x: x['ts'])
 
@@ -295,6 +296,35 @@ class AMDTorchProfilerParser():
             # GC
             if (self._gc_counter % 300 == 0) and (corr_id in self.correlation_to_kernel_launch):
                 all_call_stack = [item for item in all_call_stack if item['ts']+item['dur'] > launch_kernel_end_timestamp]
+            elif (self._gc_counter % 300 == 0) and not (corr_id in self.correlation_to_kernel_launch):
+                self._gc_counter -= 1
+            else:
+                pass
+
+    def find_user_annotation(self):
+        all_user_annotation = self.all_user_annotations
+        all_user_annotation = [item for item in all_user_annotation if isinstance(item, dict) and 'ts' in item and 'dur' in item and 'name' in item]
+        all_user_annotation.sort(key=lambda x: x['ts'])
+        self._gc_counter = 0
+        # 对于每一条hiplaunch kernel 信号,向上查找是否有user annotation
+        for kernel in tqdm.tqdm(self.all_kernels, desc="find user annotations..."):
+            corr_id = kernel.correlation
+            if corr_id in self.correlation_to_kernel_launch:
+                launch_kernel_start_timestamp = self.correlation_to_kernel_launch[corr_id][0]["ts"]
+                launch_kernel_end_timestamp = self.correlation_to_kernel_launch[corr_id][0]["ts"] + \
+                                self.correlation_to_kernel_launch[corr_id][0]["dur"]
+                # 查找所有包含这个范围内的第一个有user annotation的信号
+                for item in all_user_annotation:
+                    if item['ts'] < launch_kernel_start_timestamp and \
+                        item['ts'] + item['dur'] >= launch_kernel_end_timestamp and \
+                            "cat" in item and \
+                            item["cat"]=="gpu_user_annotation":
+                        kernel.user_annotation = item["name"]
+                        self._gc_counter += 1
+                        break
+            # GC
+            if (self._gc_counter % 300 == 0) and (corr_id in self.correlation_to_kernel_launch):
+                all_user_annotation = [item for item in all_user_annotation if item['ts']+item['dur'] > launch_kernel_end_timestamp]
             elif (self._gc_counter % 300 == 0) and not (corr_id in self.correlation_to_kernel_launch):
                 self._gc_counter -= 1
             else:
@@ -331,10 +361,12 @@ class AMDTorchProfilerParser():
             self.all_launch_kernels = all_launch_kernels
             self.all_user_annotations = all_user_annotations
             self.correlation_to_kernel_launch = correlation_to_kernel_launch
+            self.all_call_stack = all_call_stack
             self.structurize_kernel(all_kernels,correlation_to_kernel_launch) # self.all_kernels
             self.structurize_cpu_op(all_cpu_op)
             self.mapping_input_shapes()
-            self.find_call_stack(all_call_stack)
+            self.find_call_stack()
+            self.find_user_annotation()
             # self.infer_output_shapes()
 
             # Map module annotations to kernels

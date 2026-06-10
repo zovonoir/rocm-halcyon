@@ -19,6 +19,7 @@ from .interfaces import (
     KernelOutputDtypeVisitor,
     KernelHostLaunchingCostVisitor,
     KernelDeviceVisitor,
+    UserAnnotationVisitor,
 )
 
 from .visitors.bw_visitor import BWVsitor
@@ -80,5 +81,6 @@ __all__ = [
     "KernelOutputDtypeVisitor",
     "KernelHostLaunchingCostVisitor",
     "KernelDeviceVisitor",
+    "UserAnnotationVisitor",
 
 ]

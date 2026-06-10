@@ -30,6 +30,7 @@ class Kernel:
     parent_module: Optional[str] = None,
     call_stack: Optional[str] = None,
     device_type: Optional[str] = None,
+    user_annotation: Optional[str] = None,
     ):
         self.name = name
         self.duration = duration
@@ -58,6 +59,7 @@ class Kernel:
         self.parent_module = parent_module
         self.call_stack = call_stack
         self.device_type = device_type
+        self.user_annotation = user_annotation
 
     def __repr__(self):
         attrs = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items())

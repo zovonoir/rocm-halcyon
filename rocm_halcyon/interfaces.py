@@ -113,6 +113,9 @@ class KernelDeviceVisitor(VisitorBase):
     def visit(self,kernel:Kernel):
         return kernel.device
 
+class UserAnnotationVisitor(VisitorBase):
+    def visit(self,kernel:Kernel):
+        return kernel.user_annotation
 
 def parse_torch_profiler(datasource:str,device_type="amd"):
     device_type = device_type.lower()
@@ -139,12 +142,29 @@ def export_to_excel(kernels:List[Kernel],visitors:Dict[str,VisitorBase],file_nam
     if sheet_name == None:
         sheet_name = "data"
 
+    def make_sheet_name(base_name, suffix):
+        suffix = f"_{suffix}"
+        return f"{base_name[:31 - len(suffix)]}{suffix}"
+
+    def write_dataframe(writer):
+        try:
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+        except ValueError as error:
+            if "This sheet is too large" not in str(error):
+                raise
+
+            max_rows_per_sheet = 1048575
+            for i, start in enumerate(range(0, len(df), max_rows_per_sheet), start=1):
+                chunk = df.iloc[start:start + max_rows_per_sheet]
+                chunk.to_excel(writer, sheet_name=make_sheet_name(sheet_name, i), index=False)
+
     if os.path.exists(file_name):
         with pd.ExcelWriter(file_name, 
                             mode='a', 
                             engine='openpyxl', 
                             if_sheet_exists='replace') as writer:
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            write_dataframe(writer)
     else:
-        df.to_excel(file_name, sheet_name=sheet_name, index=False)
+        with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
+            write_dataframe(writer)
     

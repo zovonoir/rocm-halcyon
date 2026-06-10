@@ -107,7 +107,7 @@ class NvidiaTorchProfilerParser():
     def structurize_cpu_op(self,all_cpu_ops):
         # breakpoint()
         self.all_cpu_ops:List[CpuOp] = []
-        for cpu_op in tqdm.tqdm(all_cpu_ops,desc="structurizing alll cpu ops..."):
+        for cpu_op in tqdm.tqdm(all_cpu_ops,desc="ps..."):
             input_shape = None if "Input Dims" not in cpu_op['args'] else cpu_op['args']["Input Dims"]
             input_strides = None if "Input Strides" not in cpu_op['args'] else cpu_op['args']["Input Strides"]
             input_dtype = None if "Input type" not in cpu_op['args'] else cpu_op['args']["Input type"]
